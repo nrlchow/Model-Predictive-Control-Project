@@ -1,8 +1,111 @@
- Project: Model Predictive Control
+ *** Model Predictive Control ***
+  
+Self-Driving Car Engineer Nanodegree Program
+
 ---
 
-In this project I am implementing Model Predictive Control to drive the car around the track.I'll have to calculate cross track error myself! 
-Additionally, there's a 100 millisecond latency between actuations commands on top of the connection latency.
+Video Reference:
+
+You can see how the car performs on an unseen track in a simulated environment here : 
+
+### Track1: 
+
+[![Alt text](https://img.youtube.com/vi/ZXKrKh6msiE&t=11s/0.jpg)](https://www.youtube.com/watch?v=ZXKrKh6msiE&t=11s)
+
+
+# The MPC Model : 
+
+Here, I'll describe the model in detail. This includes the state, actuators and update equations.
+
+In this project, I have used Model Predictive Control (MPC) to drive the car around the track. The MPC minimize the cross track and orientation errors of the vehicle with respect to a line.The simulation output displays the MPC trajectory path in green, and the polynomial fitted reference path in yellow at the same time. The points get displayed in reference to the vehcle's coordinate system and the waypoints in reference to the map's coordinate system.The wayspoints are transformed to the vehicle's coordiate system.
+
+The reference trajectory is passed as a third-degree polynomials since they can fit most roads.A controller actuates the vehicle to follow the reference trajectory.The controller minimizes the error between the reference trajectory and the vehicle’s actual path.The error is minimized predicting the vehicle’s actual path and then adjusting the actuators to minimize the difference between the prediction and the reference trajectory.The cross track error (cte) and the the psi error (epsi) which is angle between the vehicle orientation and trajectory orientation are minimized.I have set the speed to 40 mph and converted that to meters per second.
+
+
+
+## State
+The state is six elements vectors:
+    
+    State is [x,y,ψ,v,cte,eψ].
+
+    x: the x-position
+    y: the y-position
+    ψ: the vehicle orientation
+    v: the velocity
+    cte: the cross trak error
+    eψ : the the vehicle orientation error
+
+## Actuators [δ, a]
+
+We have two actuators: 
+
+    δ (the steering angle) and
+    a (acceleration, i.e. throttle and brake pedals).
+
+
+## Update equations 
+
+    x = x + v*cos(ψ)* dt
+    y = y + v sin(psi) dt
+    v = v+a∗dt * a in [-1,1]
+    ψ = ψ+(v/L_f)*δ∗dt
+
+
+# Timestep Length and Elapsed Duration (N & dt) : 
+
+I assined 25 to N which is the timestep length, or the length of the trajectory and .1 to dt which is the duration of each timestep. 
+I performed tuning with slightly different values but at the end I found this combination helps to decrease the CTE and drive the car around the track smoother. 
+
+While trying a different combinations of N (8~50) and dt (0.05~1.0), I observed the varying magnitude of cross track error,erratic behaviour,shaky wheel and jerking to smooth manueveraround the track.When I tried with increased N and decreased dt.I then observed improved fit and smooth driving at the begining but it was less steady in curvature.At the end,I chose 25 for N and, 0.1 for dt.  
+
+
+
+3. Polynomial Fitting and MPC Preprocessing
+
+I used Polyfit function to fit a 3rd order polynomial to the given x and y coordinates of waypoints. The coefficients were used to estimate cross track and desired orientation errors. 
+
+The processing steps includes, 
+
+> Converting waypoints to vehicle coordinates.
+> Fitting a polynomial.
+> Computing the initial cross-track and orientation errors.
+> Defining the current state.
+> Running the optimizer using MPC solver
+> Setting the steering and throttle values.
+
+The initial vehicle state, lower and upper limits for delta steeting angle and throttle,constraints were set in MPC class. Using these values MPC solver returned actuator values and MPC trajectory paths.
+
+# Here is the MPC algorithm:
+
+We pass the current state as the initial state to the model predictive controller.We call the optimization solver. Given the initial state, the solver returns the vector of control inputs that minimizes the cost function.The solverused is called Ipopt.We apply the first control input to the vehicle. The process gets repeated.
+
+
+Setup:
+
+1. Define the length of the trajectory, N, and duration of each timestep, dt.
+
+2. Define vehicle dynamics and actuator limitations along with other constraints.
+
+3. Define the cost function.
+
+Loop:
+
+1. We pass the current state as the initial state to the model predictive controller.
+
+2. We call the optimization solver. Given the initial state, the solver will return the vector of control inputs that minimizes the cost function. The solver we'll use is called Ipopt.
+
+3. We apply the first control input to the vehicle.
+
+4. Back to 1.
+
+
+
+#. Model Predictive Control with Latency
+
+To mimic real driving conditions where the car does actuate the commands instantly, a 100 millisecond latency was incrporated in to the model.
+In this model,We have incorporated an expected latency of 100 ms by predicting the car's state in 100 ms using the vehicle model.The resulting state from the simulation is the new initial state for MPC.
+
+
 
 ## Dependencies
 
@@ -18,27 +121,3 @@ Additionally, there's a 100 millisecond latency between actuations commands on t
   * Windows: recommend using [MinGW](http://www.mingw.org/)
 * [uWebSockets](https://github.com/uWebSockets/uWebSockets)
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-   
-* Fortran Compiler
-  * Mac: `brew install gcc` (might not be required)
-  * Linux: `sudo apt-get install gfortran`. Additionall you have also have to install gcc and g++, `sudo apt-get install gcc g++`. Look in [this Dockerfile](https://github.com/udacity/CarND-MPC-Quizzes/blob/master/Dockerfile) for more info.
-* [Ipopt](https://projects.coin-or.org/Ipopt)
-  * Mac: `brew install ipopt`
-  * Linux
-    * You will need a version of Ipopt 3.12.1 or higher. The version available through `apt-get` is 3.11.x. If you can get that version to work great but if not there's a script `install_ipopt.sh` that will install Ipopt. You just need to download the source from the Ipopt [releases page](https://www.coin-or.org/download/source/Ipopt/) or the [Github releases](https://github.com/coin-or/Ipopt/releases) page.
-    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `bash install_ipopt.sh Ipopt-3.12.1`. 
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
-* [CppAD](https://www.coin-or.org/CppAD/)
-  * Mac: `brew install cppad`
-  * Linux `sudo apt-get install cppad` or equivalent.
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
-* [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page). This is already part of the repo so you shouldn't have to worry about it.
-* Simulator. 
-
-
