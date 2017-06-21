@@ -1,7 +1,7 @@
+ 
  *** Model Predictive Control ***
   
 Self-Driving Car Engineer Nanodegree Program
-
 ---
 
 Video Reference:
@@ -10,7 +10,8 @@ You can see how the car performs on an unseen track in a simulated environment h
 
 ### Track1: 
 
-[![Alt text](https://img.youtube.com/vi/ZXKrKh6msiE&t=11s/0.jpg)](https://www.youtube.com/watch?v=ZXKrKh6msiE&t=11s)
+[![Alt text](https://img.youtube.com/vi/ZXKrKh6msiE/0.jpg)](https://www.youtube.com/watch?v=ZXKrKh6msiE)
+
 
 
 # The MPC Model : 
@@ -60,18 +61,20 @@ While trying a different combinations of N (8~50) and dt (0.05~1.0), I observed 
 
 
 
-3. Polynomial Fitting and MPC Preprocessing
+# Polynomial Fitting and MPC Preprocessing
 
 I used Polyfit function to fit a 3rd order polynomial to the given x and y coordinates of waypoints. The coefficients were used to estimate cross track and desired orientation errors. 
 
 The processing steps includes, 
 
-> Converting waypoints to vehicle coordinates.
+```
+>Converting waypoints to vehicle coordinates.
 > Fitting a polynomial.
 > Computing the initial cross-track and orientation errors.
 > Defining the current state.
 > Running the optimizer using MPC solver
 > Setting the steering and throttle values.
+```
 
 The initial vehicle state, lower and upper limits for delta steeting angle and throttle,constraints were set in MPC class. Using these values MPC solver returned actuator values and MPC trajectory paths.
 
@@ -80,7 +83,8 @@ The initial vehicle state, lower and upper limits for delta steeting angle and t
 We pass the current state as the initial state to the model predictive controller.We call the optimization solver. Given the initial state, the solver returns the vector of control inputs that minimizes the cost function.The solverused is called Ipopt.We apply the first control input to the vehicle. The process gets repeated.
 
 
-Setup:
+
+## Setup:
 
 1. Define the length of the trajectory, N, and duration of each timestep, dt.
 
@@ -100,7 +104,7 @@ Loop:
 
 
 
-#. Model Predictive Control with Latency
+# Model Predictive Control with Latency
 
 To mimic real driving conditions where the car does actuate the commands instantly, a 100 millisecond latency was incrporated in to the model.
 In this model,We have incorporated an expected latency of 100 ms by predicting the car's state in 100 ms using the vehicle model.The resulting state from the simulation is the new initial state for MPC.
